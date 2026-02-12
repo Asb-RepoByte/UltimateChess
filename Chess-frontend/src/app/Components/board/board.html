@@ -1,0 +1,31 @@
+<div class="board-container" cdkDropListGroup>
+  @for (piece of board; track $index) {
+  <div class="square"
+      [class.black]="isBlack($index)"
+      cdkDropList
+      [cdkDropListData]="$index"
+      [cdkDropListSortingDisabled]="true"
+      (cdkDropListDropped)="onDrop($event)">
+    @if (piece) {
+      <div class="piece-container" cdkDrag [cdkDragData]="piece">
+        <chess-piece [fen]="piece" />
+        <div *cdkDragPlaceholder class="placeholder"></div>
+      </div>
+    }
+
+    @if (getCoord($index).column === 0) {
+      <span class="label rank">
+        {{ getCoord($index).row + 1 }}
+      </span>
+    }
+
+    @if (getCoord($index).row === 0) {
+      <span class="label file">
+        {{ getColumLabel(getCoord($index).column) }}
+      </span>
+    }
+
+  </div>
+  }
+
+</div>
