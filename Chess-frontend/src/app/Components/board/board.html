@@ -6,9 +6,16 @@
       [cdkDropListData]="$index"
       [cdkDropListSortingDisabled]="true"
       (cdkDropListDropped)="onDrop($event)">
-    <div class="debug"> <h2> {{ $index }} </h2> </div>
+
+    @if (game.activeMoves.includes($index)) {
+      <div class="move-dot"></div>
+    }
+
     @if (piece) {
-      <div class="piece-container" cdkDrag [cdkDragData]="piece">
+      <div class="piece-container"
+           cdkDrag [cdkDragData]="piece"
+           (cdkDragStarted)="onDragStart($index)"
+           >
         <chess-piece [fen]="piece" />
         <div *cdkDragPlaceholder class="placeholder"></div>
       </div>

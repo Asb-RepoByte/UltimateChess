@@ -1,3 +1,5 @@
+type Direction = 'north' | 'west' | 'east' | 'south' | 'northEast' | 'northWest' | 'southWest' | 'southEast'
+
 export class ChessUtils {
   static loadFEN(fen: string): Array<string> {
     let board = new Array(64).fill(""); // start with an empty board
@@ -35,7 +37,7 @@ export class ChessUtils {
   }
 
   static isSweeper(piece: string): boolean {
-    return piece.toLowerCase() in ['r', 'k', 'q', 'b'];
+    return ['r', 'k', 'q', 'b'].includes(piece.toLowerCase());
   }
 
   static isPawn(piece: string): boolean {
@@ -52,6 +54,59 @@ export class ChessUtils {
 
   static isFreind(piece: string, other: string): boolean {
     return this.getColor(piece) === this.getColor(other);
+  }
+
+  static getPieceDirections(piece: string): {name: Direction, vector: number}[] | null {
+    if (piece.toLowerCase() === 'q') {
+      return  [
+        { name: "west", vector: -1 },
+        { name: "east", vector: 1 },
+        { name: "north", vector: -8 },
+        { name: "south", vector: 8 },
+        { name: "northEast", vector: -7 },
+        { name: "northWest", vector: -9 },
+        { name: "southEast", vector: 9 },
+        { name: "southWest", vector: 7 },
+      ];
+
+    }
+
+    if (piece.toLowerCase() === 'k') {
+      return  [
+        { name: "west", vector: -1 },
+        { name: "east", vector: 1 },
+        { name: "north", vector: -8 },
+        { name: "south", vector: 8 },
+        { name: "northEast", vector: -7 },
+        { name: "northWest", vector: -9 },
+        { name: "southEast", vector: 9 },
+        { name: "southWest", vector: 7 },
+      ];
+
+    }
+
+    if (piece.toLowerCase() === 'r') {
+      return  [
+        { name: "west", vector: -1 },
+        { name: "east", vector: 1 },
+        { name: "north", vector: -8 },
+        { name: "south", vector: 8 },
+      ];
+
+    }
+
+    if (piece.toLowerCase() === 'b') {
+      return  [
+        { name: "northEast", vector: -7 },
+        { name: "northWest", vector: -9 },
+        { name: "southEast", vector: 9 },
+        { name: "southWest", vector: 7 },
+      ];
+
+    }
+
+    return null;
+
   }
 
 }

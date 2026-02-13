@@ -19,11 +19,16 @@ export class Board {
     this.game.initGame(this.startPos());
   }
 
+  onDragStart(index: number) {
+    console.log(this.game.getMoves(index));
+  }
+
   onDrop(event: CdkDragDrop<number>) {
     const src = event.previousContainer.data;
     const target = event.container.data;
 
     this.game.handleMove(src, target);
+    this.game.clearActiveMoves();
   }
 }
 
