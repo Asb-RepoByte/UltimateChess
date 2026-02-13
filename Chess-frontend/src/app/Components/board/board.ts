@@ -11,7 +11,7 @@ import { GameStateService } from '../../Services/game-state-service';
   styleUrl: './board.css',
 })
 export class Board {
-  startPos = input<string>("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+  startPos = input<string>("rnbqkbnr/8/8/8/8/8/8/RNBQKBNR");
   game = inject(GameStateService);
   readonly Utils = ChessUtils;
 
@@ -21,6 +21,10 @@ export class Board {
 
   onDragStart(index: number) {
     console.log(this.game.getMoves(index));
+  }
+
+  onUnSelect(index: number) {
+    this.game.clearActiveMoves();
   }
 
   onDrop(event: CdkDragDrop<number>) {

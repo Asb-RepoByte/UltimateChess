@@ -2,18 +2,27 @@
   @for (piece of this.game.board; track $index) {
   <div class="square"
       [class.black]="Utils.isSquareBlack($index)"
+      [class.last-move-src]="game.lastMove?.src === $index"
+      [class.last-move-target]="game.lastMove?.target === $index"
       cdkDropList
       [cdkDropListData]="$index"
       [cdkDropListSortingDisabled]="true"
       (cdkDropListDropped)="onDrop($event)">
 
     @if (game.activeMoves.includes($index)) {
-      <div class="move-dot"></div>
+      @if (game.board[$index]) {
+        <div class="capture-dot"></div>
+
+      } @else {
+        <div class="move-dot"></div>
+      }
     }
 
     @if (piece) {
       <div class="piece-container"
            cdkDrag [cdkDragData]="piece"
+           (mousedown)="onDragStart($index)"
+           (mouseup)="onUnSelect($index)"
            (cdkDragStarted)="onDragStart($index)"
            >
         <chess-piece [fen]="piece" />

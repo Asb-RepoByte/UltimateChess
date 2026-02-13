@@ -89,8 +89,45 @@
   position: absolute;
   width: 20px;
   height: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 1.0);
   border-radius: 50%;
   pointer-events: none;
+  z-index: 1000;
+}
+
+/* Last Move Highlight: Soft Yellow/Green */
+.square.last-move-src {
+  background-color: rgba(245, 246, 130, 0.8) !important;
+}
+
+.square.last-move-target {
+  background-color: rgba(215, 216, 100, 0.9) !important;
+}
+
+/* Legal Move Dot: Small, Green-ish, Translucent */
+.move-dot {
+  width: 25%;
+  height: 25%;
+  background-color: rgba(0, 0, 0, 0.15); /* Neutral dark for visibility */
+  background-color: rgba(129, 182, 76, 0.6); /* Greenish tint */
+  border-radius: 50%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Capture Ring: A red-ish border around the piece */
+.capture-dot {
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border: 6px solid rgba(231, 76, 60, 0.4); /* Soft Red */
+  border-radius: 50%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Style for the piece while it's being dragged */
+.cdk-drag-preview {
+  cursor: grabbing;
   z-index: 1000;
 }
