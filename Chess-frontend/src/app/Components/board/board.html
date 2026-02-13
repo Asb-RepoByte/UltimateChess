@@ -1,11 +1,12 @@
 <div class="board-container" cdkDropListGroup>
-  @for (piece of board; track $index) {
+  @for (piece of this.game.board; track $index) {
   <div class="square"
-      [class.black]="isBlack($index)"
+      [class.black]="Utils.isSquareBlack($index)"
       cdkDropList
       [cdkDropListData]="$index"
       [cdkDropListSortingDisabled]="true"
       (cdkDropListDropped)="onDrop($event)">
+    <div class="debug"> <h2> {{ $index }} </h2> </div>
     @if (piece) {
       <div class="piece-container" cdkDrag [cdkDragData]="piece">
         <chess-piece [fen]="piece" />
@@ -13,15 +14,16 @@
       </div>
     }
 
-    @if (getCoord($index).column === 0) {
+
+    @if (Utils.getCoord($index).column === 0) {
       <span class="label rank">
-        {{ getCoord($index).row + 1 }}
+        {{ Utils.getCoord($index).row + 1 }}
       </span>
     }
 
-    @if (getCoord($index).row === 0) {
+    @if (Utils.getCoord($index).row === 0) {
       <span class="label file">
-        {{ getColumLabel(getCoord($index).column) }}
+        {{ Utils.getColumLabel(Utils.getCoord($index).column) }}
       </span>
     }
 
