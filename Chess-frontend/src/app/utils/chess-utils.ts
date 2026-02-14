@@ -1,4 +1,4 @@
-type Direction = 'north' | 'west' | 'east' | 'south' | 'northEast' | 'northWest' | 'southWest' | 'southEast'
+import { Direction } from "./chess-types";
 
 export class ChessUtils {
   static loadFEN(fen: string): Array<string> {
@@ -56,7 +56,29 @@ export class ChessUtils {
     return this.getColor(piece) === this.getColor(other);
   }
 
-  static getPieceDirections(piece: string): {name: Direction, vector: number}[] | null {
+  static getPieceDirections(piece: string, index: number = -1, board: string[] = []): {name: Direction, vector: number}[] | null {
+
+    let rank = ChessUtils.getCoord(index).row;
+    console.log("rank: " + rank);
+    if (piece.toLowerCase() === 'p') {
+      if (piece.toUpperCase() === piece) {
+        // white pawn
+        let pawnDirections: {name: Direction, vector: number}[] = [ { name: "north", vector: -8 } ];
+        if (board[index - 7]) pawnDirections.push({name: "northEast", vector: -7});
+        if (board[index - 9]) pawnDirections.push({name: "northWest", vector: -9});
+        if (rank === 1) pawnDirections.push({ name: "northNorth", vector: -16 }); // white and first move
+        return pawnDirections;
+
+      } else {
+        // black pawn
+        let pawnDirections: {name: Direction, vector: number}[] = [ { name: "west", vector: 8 } ];
+        if (board[index + 7]) pawnDirections.push({name: "southWest", vector: 7});
+        if (board[index + 9]) pawnDirections.push({name: "southEast", vector: 9});
+        if (rank === 6) pawnDirections.push({ name: "westWest", vector: 16 }); // black and first move
+        return pawnDirections;
+
+      }
+    }
     if (piece.toLowerCase() === 'q') {
       return  [
         { name: "west", vector: -1 },
