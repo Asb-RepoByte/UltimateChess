@@ -131,3 +131,8 @@
   cursor: grabbing;
   z-index: 1000;
 }
+
+.square.under-threat {
+  background-color: rgba(231, 76, 60, 1.0);
+  border: 3px solid rgba(122, 76, 60, 1.0); /* Soft Red */
+}

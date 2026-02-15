@@ -17,10 +17,13 @@ export class Board {
 
   ngOnInit() {
     this.game.initGame(this.startPos());
+    this.game.turnToPlay = 'b';
+    this.game.updateThreatMap();
+    this.game.turnToPlay = 'w';
   }
 
   onDragStart(index: number) {
-    console.log(this.game.getMoves(index));
+    this.game.getMoves(index);
   }
 
   onUnSelect(index: number) {

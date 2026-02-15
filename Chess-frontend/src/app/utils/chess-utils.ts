@@ -1,4 +1,5 @@
-import { Direction } from "./chess-types";
+import { MoveGenerator } from "../engine/move-generator";
+import { ChessPlayer, Direction } from "./chess-types";
 
 export class ChessUtils {
   static loadFEN(fen: string): Array<string> {
@@ -59,7 +60,6 @@ export class ChessUtils {
   static getPieceDirections(piece: string, index: number = -1, board: string[] = []): {name: Direction, vector: number}[] | null {
 
     let rank = ChessUtils.getCoord(index).row;
-    console.log("rank: " + rank);
     if (piece.toLowerCase() === 'p') {
       if (piece.toUpperCase() === piece) {
         // white pawn
@@ -79,6 +79,21 @@ export class ChessUtils {
 
       }
     }
+
+    if (piece.toLowerCase() === 'n') {
+      return [
+        { name: 'N1', vector: -17},
+        { name: 'N2', vector: -10},
+        { name: 'N3', vector: 6},
+        { name: 'N4', vector: 15},
+        { name: 'N5', vector: 17},
+        { name: 'N6', vector: 10},
+        { name: 'N7', vector: -6},
+        { name: 'N8', vector: -15},
+      ]
+
+    }
+
     if (piece.toLowerCase() === 'q') {
       return  [
         { name: "west", vector: -1 },
@@ -128,6 +143,28 @@ export class ChessUtils {
     }
 
     return null;
+
+  }
+
+  static isKingInDanger(piece: string, board: string[]): boolean {
+    let king = piece.toLowerCase() === piece ? 'k' : 'K';
+    let kingIndex = board.findIndex(x => x === king);
+
+    for (let i  = 0; i < board.length; i++) {
+      let other = board[i];
+      if (!other || ChessUtils.isFreind(piece, other)) continue;
+
+      let targetSquares = MoveGenerator.getPseudoLegalMoves(i, board).map(move => move.target);
+
+      if (targetSquares.includes(kingIndex)) return true;
+
+    }
+    return false;
+  }
+
+  static getPlayerType(piece: string): ChessPlayer {
+    if (piece.toUpperCase() === piece) return 'w';
+    return 'b';
 
   }
 
