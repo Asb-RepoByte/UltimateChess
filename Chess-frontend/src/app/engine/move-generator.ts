@@ -1,12 +1,12 @@
 import { Move } from "../models/move.model";
 import { ChessUtils } from "../utils/chess-utils";
+import { Direction } from "../utils/chess-types";
 
-type Direction = 'north' | 'west' | 'east' | 'south' | 'northEast' | 'northWest' | 'southWest' | 'southEast'
 
 export class MoveGenerator {
 
-  private static boardSweeper: Array<Record<Direction, number>> = MoveGenerator.initSweep();
-  static readonly directions: { name: Direction, vector: number}[] = [
+  private static _boardSweeper: Array<Record<Direction, number>> =  [];
+  static readonly directions: { name: Direction, vector: number }[] = [
     { name: "west", vector: -1 },
     { name: "east", vector: 1 },
     { name: "north", vector: -8 },
@@ -17,6 +17,16 @@ export class MoveGenerator {
     { name: "southWest", vector: 7 },
   ];
 
+
+  static get boardSweeper(): Array<Record<Direction, number>> {
+    if (this._boardSweeper.length === 0) {
+      this._boardSweeper = this.initSweep();
+      return this._boardSweeper;
+    } else {
+      return this._boardSweeper;
+    }
+
+  }
 
   static initSweep() {
     let sweeper = new Array(64);
@@ -47,17 +57,15 @@ export class MoveGenerator {
     let moves: Array<Move> = new Array();
     let pieceDirections = ChessUtils.getPieceDirections(piece);
 
-    console.log("this is a sweeper");
-
     // in case of null
-    console.log("directions:", pieceDirections);
     if (!pieceDirections) return new Array();
 
     for (let dirObj of pieceDirections) {
       const dir: Direction = dirObj.name;
       const vector = dirObj.vector;
 
-      for (let i = 1; i <= this.boardSweeper[index][dir]; i++) {
+      let n = piece.toLowerCase() === "k" ? 1: this.boardSweeper[index][dir];
+      for (let i = 1; i <= n; i++) {
         let next = index + i * vector;
         let other = board[next];
 
@@ -81,12 +89,82 @@ export class MoveGenerator {
 
   }
 
-  static calculateKnight(piece: string, index: number, board: string[]): Move[] { return new Array(); }
+  static calculateKnight(piece: string, index: number, board: string[]): Move[] {
 
-  static claculatePawn(piece: string, index: number, board: string[]): Move[] { return new Array(); }
+    let moves: Array<Move> = new Array();
+    let pieceDirections = ChessUtils.getPieceDirections(piece, index, board);
+
+    // in case of null
+    if (!pieceDirections) return new Array();
+
+    for (let dirObj of pieceDirections) {
+      const dir: Direction = dirObj.name;
+      const vector = dirObj.vector;
+
+      let next = index + vector;
+      let other = board[next];
+
+      // stup jumping through the black hole
+      let p1 = ChessUtils.getCoord(index);
+      let p2 = ChessUtils.getCoord(next);
+
+      if ((p2.row - p2.row) ** 2 + (p2.column - p1.column) ** 2 > 5) continue;
+
+      // in case the square is empty
+      if (!other) {
+        moves.push(new Move(index, next, piece));
+        continue;
+      }
+
+      // square not empty
+      if (ChessUtils.isFreind(piece, other)) continue; // if friend no
+      else {
+        moves.push(new Move(index, next, piece))
+        continue;
+      }
+
+    }
+
+    return moves;
+
+  }
+
+  static claculatePawn(piece: string, index: number, board: string[]): Move[] {
+
+    let moves: Array<Move> = new Array();
+    let pieceDirections = ChessUtils.getPieceDirections(piece, index, board);
+
+    // in case of null
+    if (!pieceDirections) return new Array();
+
+    for (let dirObj of pieceDirections) {
+      const dir: Direction = dirObj.name;
+      const vector = dirObj.vector;
+
+      let next = index + vector;
+      let other = board[next];
+
+      if (Math.abs(vector) === 16 && board[index + (vector / Math.abs(vector)) * 8]) continue; // stop jumping over pieces
+
+      // in case the square is empty
+      if (!other) {
+        moves.push(new Move(index, next, piece));
+        continue;
+      }
+
+      // square not empty
+      if (ChessUtils.isFreind(piece, other)) continue; // if friend no
+      if (ChessUtils.getCoord(index).column !== ChessUtils.getCoord(next).column) {
+        moves.push(new Move(index, next, piece))
+        continue;
+      }
+
+    }
+
+    return moves;
+  }
 
   static getPseudoLegalMoves(index: number, board: string[]): Move[] {
-    console.log("this pseudo legal");
     const piece = board[index];
 
     if (ChessUtils.isSweeper(piece)) return this.calculateSweeper(piece, index, board);

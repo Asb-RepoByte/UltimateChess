@@ -3,6 +3,7 @@
   <div class="square"
       [class.black]="Utils.isSquareBlack($index)"
       [class.last-move-src]="game.lastMove?.src === $index"
+      [class.under-threat]="game.threatMap.includes($index)"
       [class.last-move-target]="game.lastMove?.target === $index"
       cdkDropList
       [cdkDropListData]="$index"

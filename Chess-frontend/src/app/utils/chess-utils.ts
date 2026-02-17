@@ -1,4 +1,5 @@
-type Direction = 'north' | 'west' | 'east' | 'south' | 'northEast' | 'northWest' | 'southWest' | 'southEast'
+import { MoveGenerator } from "../engine/move-generator";
+import { ChessPlayer, Direction } from "./chess-types";
 
 export class ChessUtils {
   static loadFEN(fen: string): Array<string> {
@@ -56,7 +57,43 @@ export class ChessUtils {
     return this.getColor(piece) === this.getColor(other);
   }
 
-  static getPieceDirections(piece: string): {name: Direction, vector: number}[] | null {
+  static getPieceDirections(piece: string, index: number = -1, board: string[] = []): {name: Direction, vector: number}[] | null {
+
+    let rank = ChessUtils.getCoord(index).row;
+    if (piece.toLowerCase() === 'p') {
+      if (piece.toUpperCase() === piece) {
+        // white pawn
+        let pawnDirections: {name: Direction, vector: number}[] = [ { name: "north", vector: -8 } ];
+        if (board[index - 7]) pawnDirections.push({name: "northEast", vector: -7});
+        if (board[index - 9]) pawnDirections.push({name: "northWest", vector: -9});
+        if (rank === 1) pawnDirections.push({ name: "northNorth", vector: -16 }); // white and first move
+        return pawnDirections;
+
+      } else {
+        // black pawn
+        let pawnDirections: {name: Direction, vector: number}[] = [ { name: "west", vector: 8 } ];
+        if (board[index + 7]) pawnDirections.push({name: "southWest", vector: 7});
+        if (board[index + 9]) pawnDirections.push({name: "southEast", vector: 9});
+        if (rank === 6) pawnDirections.push({ name: "westWest", vector: 16 }); // black and first move
+        return pawnDirections;
+
+      }
+    }
+
+    if (piece.toLowerCase() === 'n') {
+      return [
+        { name: 'N1', vector: -17},
+        { name: 'N2', vector: -10},
+        { name: 'N3', vector: 6},
+        { name: 'N4', vector: 15},
+        { name: 'N5', vector: 17},
+        { name: 'N6', vector: 10},
+        { name: 'N7', vector: -6},
+        { name: 'N8', vector: -15},
+      ]
+
+    }
+
     if (piece.toLowerCase() === 'q') {
       return  [
         { name: "west", vector: -1 },
@@ -106,6 +143,28 @@ export class ChessUtils {
     }
 
     return null;
+
+  }
+
+  static isKingInDanger(piece: string, board: string[]): boolean {
+    let king = piece.toLowerCase() === piece ? 'k' : 'K';
+    let kingIndex = board.findIndex(x => x === king);
+
+    for (let i  = 0; i < board.length; i++) {
+      let other = board[i];
+      if (!other || ChessUtils.isFreind(piece, other)) continue;
+
+      let targetSquares = MoveGenerator.getPseudoLegalMoves(i, board).map(move => move.target);
+
+      if (targetSquares.includes(kingIndex)) return true;
+
+    }
+    return false;
+  }
+
+  static getPlayerType(piece: string): ChessPlayer {
+    if (piece.toUpperCase() === piece) return 'w';
+    return 'b';
 
   }
 

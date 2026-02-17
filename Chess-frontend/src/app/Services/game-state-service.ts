@@ -3,6 +3,9 @@ import { SoundService } from './sound-service';
 import { ChessUtils } from '../utils/chess-utils';
 import { MoveGenerator } from '../engine/move-generator';
 import { Move } from '../models/move.model';
+import { MoveValidator } from '../engine/move-validator';
+import { ChessPlayer } from '../utils/chess-types';
+
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +13,9 @@ import { Move } from '../models/move.model';
 export class GameStateService {
   private soundService = inject(SoundService);
   private _board: string[] = [];
+  public threatMap: number[] = [];
+  turnToPlay: ChessPlayer = 'w';
+
   activeMoves: number[] = [];
   public lastMove: Move | null = null;
 
@@ -17,7 +23,7 @@ export class GameStateService {
     this._board = ChessUtils.loadFEN(fen);
   }
 
-  public get board() : ReadonlyArray<string> {
+  public get board(): ReadonlyArray<string> {
     return this._board;
   }
 
@@ -33,9 +39,13 @@ export class GameStateService {
     const moves = this.getMoves(src);
 
     if (!this.activeMoves.includes(target)) return; // only make the moves if it's on the set of possible moves
+    if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
 
     this._board[target] = piece;
     this._board[src] = "";
+
+    this.updateThreatMap();
+    this.turnToPlay = this.turnToPlay === 'w' ? 'b' : 'w';
 
     this.lastMove = new Move(src, target, piece, isCapture);
 
@@ -46,8 +56,31 @@ export class GameStateService {
     }
   }
 
+  updateThreatMap() {
+    this.threatMap = new Array();
+    for (let i = 0; i < this._board.length; i++) {
+      let piece = this._board[i];
+      if (!piece) continue;
+
+      if (this.turnToPlay === 'w') {
+        if (piece.toUpperCase() !== piece) continue;
+      } else {
+        if (piece.toLowerCase() !== piece) continue;
+      }
+
+      console.log("piece: ", piece);
+      this.threatMap = this.threatMap.concat(MoveGenerator.getPseudoLegalMoves(i, [...this.board]).map(move => move.target));
+
+    }
+
+    console.log("threat: ", this.threatMap);
+  }
+
   getMoves(index: number) {
-    const moves =  MoveGenerator.getPseudoLegalMoves(index, [...this._board]);
+    let piece = this.board[index];
+    if (!piece) return;
+    if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
+    const moves = MoveValidator.getValidMoves(index, [...this._board]);
     this.activeMoves = moves.map(move => move.target);
     return moves;
   }

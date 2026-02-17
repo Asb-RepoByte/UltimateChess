@@ -11,16 +11,19 @@ import { GameStateService } from '../../Services/game-state-service';
   styleUrl: './board.css',
 })
 export class Board {
-  startPos = input<string>("rnbqkbnr/8/8/8/8/8/8/RNBQKBNR");
+  startPos = input<string>("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
   game = inject(GameStateService);
   readonly Utils = ChessUtils;
 
   ngOnInit() {
     this.game.initGame(this.startPos());
+    this.game.turnToPlay = 'b';
+    this.game.updateThreatMap();
+    this.game.turnToPlay = 'w';
   }
 
   onDragStart(index: number) {
-    console.log(this.game.getMoves(index));
+    this.game.getMoves(index);
   }
 
   onUnSelect(index: number) {
