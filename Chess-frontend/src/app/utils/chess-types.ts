@@ -9,3 +9,8 @@ export interface GameState {
   castling: string;
   enPassant: number | null;
 }
+
+export interface MoveHistoryEntry {
+  san: string;
+  fen: string; // The state AFTER the move
+}
