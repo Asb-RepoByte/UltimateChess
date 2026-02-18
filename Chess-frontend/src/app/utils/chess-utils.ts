@@ -1,5 +1,6 @@
 import { MoveGenerator } from "../engine/move-generator";
 import { ChessPlayer, Direction, GameState } from "./chess-types";
+import { Move } from "../models/move.model";
 
 export class ChessUtils {
   static loadFEN(fen: string): GameState {
@@ -198,6 +199,70 @@ export class ChessUtils {
     if (piece.toUpperCase() === piece) return 'w';
     return 'b';
 
+  }
+
+  static getIndexToCoord(index: number) {
+    return this.getColumLabel(ChessUtils.getCoord(index).column) + (ChessUtils.getCoord(index).row + 1);
+  }
+
+  static getSAN(move: Move, board: string[], allLegalMoves: Move[]): string {
+    const piece = move.piece.toUpperCase();
+    const targetSquare = this.getIndexToCoord(move.target); // e.g., "e4"
+
+    // 1. Castling (Special Case)
+    if (piece === 'K') {
+      if (move.src === 4 && move.target === 6) return 'O-O';
+      if (move.src === 4 && move.target === 2) return 'O-O-O';
+      if (move.src === 60 && move.target === 62) return 'O-O';
+      if (move.src === 60 && move.target === 58) return 'O-O-O';
+    }
+
+    let san = '';
+
+    // 2. Piece Letter (None for Pawns)
+    if (piece !== 'P') {
+      san += piece;
+
+      // 3. Disambiguation
+      // Find all other pieces of the same type that could move to this target
+      const duplicates = allLegalMoves.filter(m =>
+        m.target === move.target &&
+        m.src !== move.src &&
+        board[m.src].toUpperCase() === piece
+      );
+
+      if (duplicates.length > 0) {
+        const srcCoord = this.getCoord(move.src);
+        const hasSameFile = duplicates.some(m => this.getCoord(m.src).column === srcCoord.column);
+        const hasSameRank = duplicates.some(m => this.getCoord(m.src).row === srcCoord.row);
+
+        if (!hasSameFile) {
+          san += this.getColumLabel(srcCoord.column);
+        } else if (!hasSameRank) {
+          san += (srcCoord.row + 1).toString();
+        } else {
+          san += this.getColumLabel(srcCoord.column) + (srcCoord.row + 1).toString();
+        }
+      }
+    }
+
+    // 4. Captures
+    if (move.isCapture) {
+      if (piece === 'P') {
+        // Pawns must show their starting file on capture (e.g., "exd5")
+        san += this.getColumLabel(this.getCoord(move.src).column);
+      }
+      san += 'x';
+    }
+
+    // 5. Target Square
+    san += targetSquare;
+
+    // 6. Promotion (Example: e8=Q)
+    // You'll need to add a 'promotion' property to your Move object later
+    // if (move.promotion) san += "=" + move.promotion.toUpperCase();
+
+    return san;
   }
 
 }

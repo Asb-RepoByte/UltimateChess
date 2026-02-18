@@ -49,31 +49,44 @@
     }
   </div>
 
-
   <div class="info-bar">
-      <div class="move-history-container">
-        <h3>Moves</h3>
-        <div class="move-list">
-          @for (move of game.history; track $index) {
-            <div class="move-item">
-              @if ($index % 2 === 0) {
-                <span class="move-number">{{ ($index / 2) + 1 }}.</span>
-              }
-              <span class="move-san">{{ "ne4" }}</span>
-            </div>
-          }
+    <div class="info-header">
+      <span>Move history</span>
+    </div>
+
+    <div class="move-list-container">
+      @for (move of game.history; track $index) {
+        @if ($index % 2 === 0) {
+          <div class="move-row">
+            <div class="move-number">{{ ($index / 2) + 1 }}.</div>
+            <div class="white-move move-item">{{ move.san }}</div>
+
+            @if (game.history[$index + 1]) {
+              <div class="black-move move-item">
+                 {{ game.history[$index + 1].san }}
+              </div>
+            } @else {
+              <div class="black-move move-item empty"></div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <div class="action-footer">
+      <div class="main-actions">
+        <button class="action-btn" (click)="game.undo()" [disabled]="game.history.length === 0"><span class="icon">↩</span></button>
+      </div>
+      <div class="utility-actions">
+        <div class="left-utils">
+          <span class="icon">🔗</span>
+          <span class="icon">📥</span>
+          <span class="icon">⚙️</span>
         </div>
+        <button class="resign-btn">🏳 Resign</button>
       </div>
-
-      <div class="controls">
-        <button class="control-btn" (click)="game.undo()" [disabled]="game.history.length === 0">
-          <i class="undo-icon">↺</i> Undo
-        </button>
-        <button class="control-btn" (click)="game.redo()" disabled>
-          <i class="redo-icon">↻</i> Redo
-        </button>
-      </div>
-
+    </div>
   </div>
+
 
 <div>

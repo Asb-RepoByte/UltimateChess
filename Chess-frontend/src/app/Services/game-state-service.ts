@@ -4,7 +4,8 @@ import { ChessUtils } from '../utils/chess-utils';
 import { MoveGenerator } from '../engine/move-generator';
 import { Move } from '../models/move.model';
 import { MoveValidator } from '../engine/move-validator';
-import { ChessPlayer, GameState } from '../utils/chess-types';
+import { ChessPlayer } from '../utils/chess-types';
+import { MoveHistoryEntry } from '../utils/chess-types';
 
 
 @Injectable({
@@ -13,8 +14,9 @@ import { ChessPlayer, GameState } from '../utils/chess-types';
 export class GameStateService {
   private soundService = inject(SoundService);
   private _board: string[] = [];
+  public san: string = '';
   public threatMap: number[] = [];
-  public history: string[] = [];
+  public history: MoveHistoryEntry[] = [];
   turnToPlay: ChessPlayer = 'w';
 
   activeMoves: number[] = [];
@@ -49,37 +51,44 @@ export class GameStateService {
   }
 
   handleMove(src: number, target: number): void {
-    if (src === target) return; // if the target move is the same as the source return
-
     const piece = this._board[src];
     const isCapture = !!this._board[target];
-
-    this.getMoves(src);
-
-    if (!this.activeMoves.includes(target)) return; // only make the moves if it's on the set of possible moves
+    const move = new Move(src, target, piece, isCapture);
 
     if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
+    if (src === target) return; // if the target move is the same as the source return
 
-    this.history.push(this.exportFEN());
-    this._board[target] = piece;
-    this._board[src] = "";
-
-    this.updateThreatMap();
-    this.turnToPlay = this.turnToPlay === 'w' ? 'b' : 'w';
-
-    this.lastMove = new Move(src, target, piece, isCapture);
-
+    // making sound
     if (isCapture) {
       this.soundService.playCapture();
     } else {
       this.soundService.playMove();
     }
+
+    const allLegalMoves = this.getMoves(src);
+
+    if (!this.activeMoves.includes(target)) return; // only make the moves if it's on the set of possible moves
+
+    const san = ChessUtils.getSAN(move, [...this._board], allLegalMoves);
+    this.history.push({ fen: this.exportFEN(), san: san }); // pushing the state to the history before making the move
+    this.lastMove = move;
+    this.san = ChessUtils.getSAN(move, [...this._board], allLegalMoves);
+
+    // actually making the move
+    this._board[target] = piece;
+    this._board[src] = "";
+
+    // updating everything that needs to be updated
+    this.updateThreatMap();
+    this.turnToPlay = this.turnToPlay === 'w' ? 'b' : 'w';
+
+
   }
 
   undo() {
     if (this.history.length === 0) return;
 
-    const previousState = this.history.pop()!;
+    const previousState = this.history.pop()!.fen;
     this.loadFEN(previousState);
     this.updateThreatMap();
     this.soundService.playMove();
@@ -107,10 +116,10 @@ export class GameStateService {
     console.log("threat: ", this.threatMap);
   }
 
-  getMoves(index: number) {
+  getMoves(index: number): Move[] {
     let piece = this.board[index];
-    if (!piece) return;
-    if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
+    if (!piece) return [];
+    if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return [];
     const moves = MoveValidator.getValidMoves(index, [...this._board]);
     this.activeMoves = moves.map(move => move.target);
     return moves;
