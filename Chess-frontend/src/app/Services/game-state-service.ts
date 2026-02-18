@@ -4,7 +4,7 @@ import { ChessUtils } from '../utils/chess-utils';
 import { MoveGenerator } from '../engine/move-generator';
 import { Move } from '../models/move.model';
 import { MoveValidator } from '../engine/move-validator';
-import { ChessPlayer } from '../utils/chess-types';
+import { ChessPlayer, GameState } from '../utils/chess-types';
 
 
 @Injectable({
@@ -14,13 +14,30 @@ export class GameStateService {
   private soundService = inject(SoundService);
   private _board: string[] = [];
   public threatMap: number[] = [];
+  public history: string[] = [];
   turnToPlay: ChessPlayer = 'w';
 
   activeMoves: number[] = [];
   public lastMove: Move | null = null;
 
   initGame(fen: string) {
-    this._board = ChessUtils.loadFEN(fen);
+    this.loadFEN(fen);
+  }
+
+  exportFEN(): string {
+    return ChessUtils.exportFEN({
+      board: [...this.board],
+      turn: this.turnToPlay,
+      castling:  "",
+      enPassant: null
+    });
+  }
+
+  loadFEN(fen: string) {
+    const gameState = ChessUtils.loadFEN(fen);
+    this._board = gameState.board;
+    this.turnToPlay = gameState.turn;
+
   }
 
   public get board(): ReadonlyArray<string> {
@@ -32,15 +49,18 @@ export class GameStateService {
   }
 
   handleMove(src: number, target: number): void {
-    if (src === target) return;
+    if (src === target) return; // if the target move is the same as the source return
 
     const piece = this._board[src];
     const isCapture = !!this._board[target];
-    const moves = this.getMoves(src);
+
+    this.getMoves(src);
 
     if (!this.activeMoves.includes(target)) return; // only make the moves if it's on the set of possible moves
+
     if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
 
+    this.history.push(this.exportFEN());
     this._board[target] = piece;
     this._board[src] = "";
 
@@ -56,6 +76,17 @@ export class GameStateService {
     }
   }
 
+  undo() {
+    if (this.history.length === 0) return;
+
+    const previousState = this.history.pop()!;
+    this.loadFEN(previousState);
+    this.updateThreatMap();
+    this.soundService.playMove();
+  }
+
+  redo() {}
+
   updateThreatMap() {
     this.threatMap = new Array();
     for (let i = 0; i < this._board.length; i++) {
@@ -69,7 +100,7 @@ export class GameStateService {
       }
 
       console.log("piece: ", piece);
-      this.threatMap = this.threatMap.concat(MoveGenerator.getPseudoLegalMoves(i, [...this.board]).map(move => move.target));
+      this.threatMap = this.threatMap.concat(MoveGenerator.getPseudoLegalMoves(i, [...this.board], true).map(move => move.target));
 
     }
 

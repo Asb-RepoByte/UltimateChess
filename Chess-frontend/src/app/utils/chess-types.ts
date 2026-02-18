@@ -2,3 +2,10 @@ export type Direction = 'north' | 'west' | 'east' | 'south' | 'northEast' | 'nor
 export type ChessPlayer = 'w' | 'b'
 
 // so for the knight directions I know they are bit weird but think of them this way start from the north west that's 1 and go counter clock wise
+
+export interface GameState {
+  board: string[];
+  turn: 'w' | 'b';
+  castling: string;
+  enPassant: number | null;
+}

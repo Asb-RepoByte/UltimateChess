@@ -136,3 +136,112 @@
   background-color: rgba(231, 76, 60, 1.0);
   border: 3px solid rgba(122, 76, 60, 1.0); /* Soft Red */
 }
+
+.game-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+
+/* 2. The Sidebar Styling (Redesigned) */
+.info-bar {
+  width: 320px;
+  height: 560px; /* Aligned with board height (8 * 70) */
+  background: #262421;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  border: 1px solid #3c3934;
+}
+
+/* Move List Area */
+.move-history-container {
+  flex-grow: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.move-history-container h3 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #8b8987;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.move-list {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr;
+  row-gap: 2px;
+}
+
+.move-item-header { color: #666; font-size: 13px; padding: 4px; }
+.move-san {
+  color: #bababa;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.move-san:hover {
+  background: #363430;
+  color: #fff;
+}
+
+/* 3. The Controls (Undo/Redo) */
+.controls {
+  display: flex;
+  padding: 12px;
+  background: #2d2b28;
+  border-top: 1px solid #3c3934;
+  gap: 8px;
+}
+
+.control-btn {
+  flex: 1;
+  background: #3c3934;
+  border: none;
+  color: #bababa;
+  padding: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: #45423e;
+  color: #fff;
+}
+
+.control-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+/* The Undo Button specific styling */
+.control-btn.undo-active {
+  border-bottom: 2px solid #81b64c; /* Green accent when active */
+}
+
+/* Chat Placeholder */
+.chat-placeholder {
+  padding: 15px;
+  font-size: 12px;
+  color: #555;
+  text-align: center;
+  border-top: 1px solid #333;
+}
