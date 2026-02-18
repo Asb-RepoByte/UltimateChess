@@ -1,50 +1,79 @@
-<div class="board-container" cdkDropListGroup>
-  @for (piece of this.game.board; track $index) {
-  <div class="square"
-      [class.black]="Utils.isSquareBlack($index)"
-      [class.last-move-src]="game.lastMove?.src === $index"
-      [class.under-threat]="game.threatMap.includes($index)"
-      [class.last-move-target]="game.lastMove?.target === $index"
-      cdkDropList
-      [cdkDropListData]="$index"
-      [cdkDropListSortingDisabled]="true"
-      (cdkDropListDropped)="onDrop($event)">
+<div class="game-layout">
+  <div class="board-container" cdkDropListGroup>
+    @for (piece of this.game.board; track $index) {
+    <div class="square"
+        [class.black]="Utils.isSquareBlack($index)"
+        [class.last-move-src]="game.lastMove?.src === $index"
+        [class.under-threat]="game.threatMap.includes($index)"
+        [class.last-move-target]="game.lastMove?.target === $index"
+        cdkDropList
+        [cdkDropListData]="$index"
+        [cdkDropListSortingDisabled]="true"
+        (cdkDropListDropped)="onDrop($event)">
 
-    @if (game.activeMoves.includes($index)) {
-      @if (game.board[$index]) {
-        <div class="capture-dot"></div>
+      @if (game.activeMoves.includes($index)) {
+        @if (game.board[$index]) {
+          <div class="capture-dot"></div>
 
-      } @else {
-        <div class="move-dot"></div>
+        } @else {
+          <div class="move-dot"></div>
+        }
       }
-    }
 
-    @if (piece) {
-      <div class="piece-container"
-           cdkDrag [cdkDragData]="piece"
-           (mousedown)="onDragStart($index)"
-           (mouseup)="onUnSelect($index)"
-           (cdkDragStarted)="onDragStart($index)"
-           >
-        <chess-piece [fen]="piece" />
-        <div *cdkDragPlaceholder class="placeholder"></div>
+      @if (piece) {
+        <div class="piece-container"
+             cdkDrag [cdkDragData]="piece"
+             (mousedown)="onDragStart($index)"
+             (mouseup)="onUnSelect($index)"
+             (cdkDragStarted)="onDragStart($index)"
+             >
+          <chess-piece [fen]="piece" />
+          <div *cdkDragPlaceholder class="placeholder"></div>
+        </div>
+      }
+
+
+      @if (Utils.getCoord($index).column === 0) {
+        <span class="label rank">
+          {{ Utils.getCoord($index).row + 1 }}
+        </span>
+      }
+
+      @if (Utils.getCoord($index).row === 0) {
+        <span class="label file">
+          {{ Utils.getColumLabel(Utils.getCoord($index).column) }}
+        </span>
+      }
+
+    </div>
+    }
+  </div>
+
+
+  <div class="info-bar">
+      <div class="move-history-container">
+        <h3>Moves</h3>
+        <div class="move-list">
+          @for (move of game.history; track $index) {
+            <div class="move-item">
+              @if ($index % 2 === 0) {
+                <span class="move-number">{{ ($index / 2) + 1 }}.</span>
+              }
+              <span class="move-san">{{ "ne4" }}</span>
+            </div>
+          }
+        </div>
       </div>
-    }
 
-
-    @if (Utils.getCoord($index).column === 0) {
-      <span class="label rank">
-        {{ Utils.getCoord($index).row + 1 }}
-      </span>
-    }
-
-    @if (Utils.getCoord($index).row === 0) {
-      <span class="label file">
-        {{ Utils.getColumLabel(Utils.getCoord($index).column) }}
-      </span>
-    }
+      <div class="controls">
+        <button class="control-btn" (click)="game.undo()" [disabled]="game.history.length === 0">
+          <i class="undo-icon">↺</i> Undo
+        </button>
+        <button class="control-btn" (click)="game.redo()" disabled>
+          <i class="redo-icon">↻</i> Redo
+        </button>
+      </div>
 
   </div>
-  }
 
-</div>
+<div>

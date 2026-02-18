@@ -64,7 +64,7 @@ export class MoveGenerator {
       const dir: Direction = dirObj.name;
       const vector = dirObj.vector;
 
-      let n = piece.toLowerCase() === "k" ? 1: this.boardSweeper[index][dir];
+      let n = piece.toLowerCase() === "k" ? Math.min(1, this.boardSweeper[index][dir]): this.boardSweeper[index][dir];
       for (let i = 1; i <= n; i++) {
         let next = index + i * vector;
         let other = board[next];
@@ -129,10 +129,10 @@ export class MoveGenerator {
 
   }
 
-  static claculatePawn(piece: string, index: number, board: string[]): Move[] {
+  static claculatePawn(piece: string, index: number, board: string[], forThreat:boolean = false): Move[] {
 
     let moves: Array<Move> = new Array();
-    let pieceDirections = ChessUtils.getPieceDirections(piece, index, board);
+    let pieceDirections = ChessUtils.getPieceDirections(piece, index, board, forThreat=forThreat);
 
     // in case of null
     if (!pieceDirections) return new Array();
@@ -146,6 +146,9 @@ export class MoveGenerator {
 
       if (Math.abs(vector) === 16 && board[index + (vector / Math.abs(vector)) * 8]) continue; // stop jumping over pieces
 
+      const p1 = ChessUtils.getCoord(index);
+      const p2 = ChessUtils.getCoord(next);
+      if (((p2.row - p1.row) ** 2 + (p2.column - p1.column) ** 2) > 4) continue;
       // in case the square is empty
       if (!other) {
         moves.push(new Move(index, next, piece));
@@ -164,12 +167,12 @@ export class MoveGenerator {
     return moves;
   }
 
-  static getPseudoLegalMoves(index: number, board: string[]): Move[] {
+  static getPseudoLegalMoves(index: number, board: string[], forThreat:boolean = false): Move[] {
     const piece = board[index];
 
     if (ChessUtils.isSweeper(piece)) return this.calculateSweeper(piece, index, board);
     else if (ChessUtils.isKnight(piece)) return this.calculateKnight(piece, index, board);
-    else return this.claculatePawn(piece, index, board);
+    else return this.claculatePawn(piece, index, board, forThreat = forThreat);
 
   }
 
