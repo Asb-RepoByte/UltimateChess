@@ -58,12 +58,6 @@ export class GameStateService {
     if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
     if (src === target) return; // if the target move is the same as the source return
 
-    // making sound
-    if (isCapture) {
-      this.soundService.playCapture();
-    } else {
-      this.soundService.playMove();
-    }
 
     const allLegalMoves = this.getMoves(src);
 
@@ -81,6 +75,13 @@ export class GameStateService {
     // updating everything that needs to be updated
     this.updateThreatMap();
     this.turnToPlay = this.turnToPlay === 'w' ? 'b' : 'w';
+
+    // making sound
+    if (isCapture) {
+      this.soundService.playCapture();
+    } else {
+      this.soundService.playMove();
+    }
 
 
   }
