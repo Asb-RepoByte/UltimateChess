@@ -1,5 +1,5 @@
 import { MoveGenerator } from "../engine/move-generator";
-import { ChessPlayer, Direction, GameState } from "./chess-types";
+import { ChessPlayer, Direction, GameState, Castling } from "./chess-types";
 import { Move } from "../models/move.model";
 
 export class ChessUtils {
@@ -46,8 +46,18 @@ export class ChessUtils {
       if (row < 7) fen += "/";
     }
     // For a full FEN, you'd append " w KQkq - 0 1" etc. here
-    return fen + " " + gameState.turn;
+    return fen + " " + gameState.turn + " " + gameState.castling;
 
+  }
+
+  static getCastlingString(castlingRights: number): string {
+    let res = '';
+    if (castlingRights & Castling.WhiteKingside) res += 'K';
+    if (castlingRights & Castling.WhiteQueenside) res += 'Q';
+    if (castlingRights & Castling.BlackKingside) res += 'k';
+    if (castlingRights & Castling.BlackQueenside) res += 'q';
+
+    return res || '-';
   }
 
   static getCoord(index: number) {
@@ -187,7 +197,13 @@ export class ChessUtils {
       let other = board[i];
       if (!other || ChessUtils.isFreind(piece, other)) continue;
 
-      let targetSquares = MoveGenerator.getPseudoLegalMoves(i, board).map(move => move.target);
+      const gameState: GameState = {
+        board: board,
+        turn: 'w',
+        castling: "",
+        enPassant: null
+      };
+      let targetSquares = MoveGenerator.getPseudoLegalMoves(i, gameState).map(move => move.target);
 
       if (targetSquares.includes(kingIndex)) return true;
 

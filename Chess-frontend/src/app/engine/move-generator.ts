@@ -1,6 +1,6 @@
 import { Move } from "../models/move.model";
 import { ChessUtils } from "../utils/chess-utils";
-import { Direction } from "../utils/chess-types";
+import { Direction, GameState } from "../utils/chess-types";
 
 
 export class MoveGenerator {
@@ -53,21 +53,37 @@ export class MoveGenerator {
 
   }
 
-  static calculateSweeper(piece: string, index: number, board: string[]): Move[] {
+  static calculateSweeper(piece: string, index: number, gameState: GameState): Move[] {
+    const board = gameState.board;
     let moves: Array<Move> = new Array();
     let pieceDirections = ChessUtils.getPieceDirections(piece);
 
     // in case of null
     if (!pieceDirections) return new Array();
 
+    if (piece.toLowerCase() === 'k') {
+      console.log(gameState.castling);
+      if (ChessUtils.getPlayerType(piece) === 'w') {
+        if (gameState.castling.includes("Q")) pieceDirections.push({ name: "castleQueen", vector: -2 });
+        if (gameState.castling.includes("K")) pieceDirections.push({ name: "castleKing", vector: 2 });
+      } else {
+        if (gameState.castling.includes("q")) pieceDirections.push({ name: "castleQueen", vector: -2 });
+        if (gameState.castling.includes("k")) pieceDirections.push({ name: "castleKing", vector: 2 });
+      }
+
+    }
+
     for (let dirObj of pieceDirections) {
       const dir: Direction = dirObj.name;
       const vector = dirObj.vector;
+      if (Math.abs(vector) === 2) console.log(vector);
+
 
       let n = piece.toLowerCase() === "k" ? Math.min(1, this.boardSweeper[index][dir]): this.boardSweeper[index][dir];
       for (let i = 1; i <= n; i++) {
         let next = index + i * vector;
         let other = board[next];
+        if (Math.abs(vector) === 2) console.log(vector);
 
         // in case the square is empty
         if (!other) {
@@ -167,10 +183,11 @@ export class MoveGenerator {
     return moves;
   }
 
-  static getPseudoLegalMoves(index: number, board: string[], forThreat:boolean = false): Move[] {
+  static getPseudoLegalMoves(index: number, gameState: GameState, forThreat:boolean = false): Move[] {
+    const board = gameState.board;
     const piece = board[index];
 
-    if (ChessUtils.isSweeper(piece)) return this.calculateSweeper(piece, index, board);
+    if (ChessUtils.isSweeper(piece)) return this.calculateSweeper(piece, index, gameState);
     else if (ChessUtils.isKnight(piece)) return this.calculateKnight(piece, index, board);
     else return this.claculatePawn(piece, index, board, forThreat = forThreat);
 
