@@ -128,7 +128,7 @@ export class GameStateService {
       castling: ChessUtils.getCastlingString(this.castlingRights),
       enPassant: null
     };
-    const moves = MoveValidator.getValidMoves(index, gameState);
+    const moves = MoveValidator.getValidMoves(index, gameState, this.threatMap);
     this.activeMoves = moves.map(move => move.target);
     return moves;
   }

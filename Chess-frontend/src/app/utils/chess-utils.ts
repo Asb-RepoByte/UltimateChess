@@ -60,6 +60,16 @@ export class ChessUtils {
     return res || '-';
   }
 
+  static getCastlingBitMap(castlingRights: string): number {
+    let rights = 0;
+    if (castlingRights.includes("Q")) rights |= Castling.WhiteQueenside;
+    if (castlingRights.includes("K")) rights |= Castling.WhiteKingside;
+    if (castlingRights.includes("q")) rights |= Castling.BlackQueenside;
+    if (castlingRights.includes("k")) rights |= Castling.BlackKingside;
+
+    return rights;
+  }
+
   static getCoord(index: number) {
     return { "row": 7 - Math.floor(index / 8), "column": index % 8 };
   }
@@ -74,7 +84,7 @@ export class ChessUtils {
   }
 
   static isSweeper(piece: string): boolean {
-    return ['r', 'k', 'q', 'b'].includes(piece.toLowerCase());
+    return ['r', 'q', 'b'].includes(piece.toLowerCase());
   }
 
   static isPawn(piece: string): boolean {
