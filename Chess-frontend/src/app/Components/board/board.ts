@@ -11,7 +11,7 @@ import { GameStateService } from '../../Services/game-state-service';
   styleUrl: './board.css',
 })
 export class Board {
-  startPos = input<string>("rnbqkbnr/8/8/8/8/8/8/RNBQKBNR w");
+  startPos = input<string>("rnbqkbnr/8/8/8/8/8/8/RNBQKBNR w KQkq");
   game = inject(GameStateService);
   readonly Utils = ChessUtils;
 

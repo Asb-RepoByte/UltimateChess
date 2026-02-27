@@ -85,16 +85,14 @@ export class MoveGenerator {
     }
 
     if (!threatMap) return moves;
+    console.log("threat: ", threatMap);
     // white queen side
     if (isWhite && (rights & Castling.WhiteQueenside)) {
       // squares must be empty and king must not be in danger
-      //
-      console.log("and got here");
       if (!board[59] && !board[58] && !board[57]) {
         if (!threatMap[60] && !threatMap[59] && !threatMap[58]) {
-          moves.push(new Move(index, 58, piece));
+          moves.push(new Move(index, 58, piece, false, undefined, true));
         }
-
       }
     }
 
@@ -103,9 +101,28 @@ export class MoveGenerator {
       // squares must be empty and king must not be in danger
       if (!board[62] && !board[61]) {
         if (!threatMap[60] && !threatMap[61]) {
-          moves.push(new Move(index, 62, piece));
+          moves.push(new Move(index, 62, piece, false, undefined, true));
         }
+      }
+    }
 
+    // black queen side
+    if (!isWhite && (rights & Castling.BlackQueenside)) {
+      // squares must be empty and king must not be in danger
+      if (!board[1] && !board[2] && !board[3]) {
+        if (!threatMap.includes(3) && !threatMap.includes(4)) {
+          moves.push(new Move(index, 2, piece, false, undefined, true));
+        }
+      }
+    }
+
+    // black king side
+    if (!isWhite && (rights & Castling.BlackKingside)) {
+      // squares must be empty and king must not be in danger
+      if (!board[5] && !board[6]) {
+        if (!threatMap.includes(4) && !threatMap.includes(5)) {
+          moves.push(new Move(index, 6, piece, false, undefined, true));
+        }
       }
     }
 
