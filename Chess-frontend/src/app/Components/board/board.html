@@ -4,7 +4,6 @@
     <div class="square"
         [class.black]="Utils.isSquareBlack($index)"
         [class.last-move-src]="game.lastMove?.src === $index"
-        [class.under-threat]="game.threatMap.includes($index)"
         [class.last-move-target]="game.lastMove?.target === $index"
         cdkDropList
         [cdkDropListData]="$index"
@@ -76,14 +75,7 @@
     <div class="action-footer">
       <div class="main-actions">
         <button class="action-btn" (click)="game.undo()" [disabled]="game.history.length === 0"><span class="icon">↩</span></button>
-      </div>
-      <div class="utility-actions">
-        <div class="left-utils">
-          <span class="icon">🔗</span>
-          <span class="icon">📥</span>
-          <span class="icon">⚙️</span>
-        </div>
-        <button class="resign-btn">🏳 Resign</button>
+        <button class="action-btn" (click)="game.undo()" [disabled]="game.history.length === 0"><span class="icon">↩</span></button>
       </div>
     </div>
   </div>

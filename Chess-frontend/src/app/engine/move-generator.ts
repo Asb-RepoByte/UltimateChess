@@ -1,6 +1,6 @@
 import { Move } from "../models/move.model";
 import { ChessUtils } from "../utils/chess-utils";
-import { Direction } from "../utils/chess-types";
+import { Castling, Direction, GameState } from "../utils/chess-types";
 
 
 export class MoveGenerator {
@@ -53,19 +53,80 @@ export class MoveGenerator {
 
   }
 
-  static calculateSweeper(piece: string, index: number, board: string[]): Move[] {
+  static calculateKing(piece: string, index: number, gameState: GameState, threatMap: number[]): Move[] {
+    const board = gameState.board;
+    const rights = ChessUtils.getCastlingBitMap(gameState.castling);
+    const isWhite = ChessUtils.getPlayerType(piece) === 'w';
+    let moves: Array<Move> = new Array();
+    let pieceDirections = ChessUtils.getPieceDirections(piece);
+
+    if (!pieceDirections) return [];
+
+    for (let dirObj of pieceDirections) {
+      const dir: Direction = dirObj.name;
+      const vector = dirObj.vector;
+
+      let next = index + vector;
+      let other = board[next];
+
+      // in case the square is empty
+      if (!other) {
+        moves.push(new Move(index, next, piece));
+        continue;
+      }
+
+      if (ChessUtils.isFreind(piece, other)) {
+        continue;
+      } else {
+        moves.push(new Move(index, next, piece));
+        continue;
+      }
+
+    }
+
+    if (!threatMap) return moves;
+    // white queen side
+    if (isWhite && (rights & Castling.WhiteQueenside)) {
+      // squares must be empty and king must not be in danger
+      //
+      console.log("and got here");
+      if (!board[59] && !board[58] && !board[57]) {
+        if (!threatMap[60] && !threatMap[59] && !threatMap[58]) {
+          moves.push(new Move(index, 58, piece));
+        }
+
+      }
+    }
+
+    // white king side
+    if (isWhite && (rights & Castling.WhiteKingside)) {
+      // squares must be empty and king must not be in danger
+      if (!board[62] && !board[61]) {
+        if (!threatMap[60] && !threatMap[61]) {
+          moves.push(new Move(index, 62, piece));
+        }
+
+      }
+    }
+
+
+    return moves;
+  }
+
+  static calculateSweeper(piece: string, index: number, gameState: GameState): Move[] {
+    const board = gameState.board;
     let moves: Array<Move> = new Array();
     let pieceDirections = ChessUtils.getPieceDirections(piece);
 
     // in case of null
     if (!pieceDirections) return new Array();
 
+
     for (let dirObj of pieceDirections) {
       const dir: Direction = dirObj.name;
       const vector = dirObj.vector;
 
-      let n = piece.toLowerCase() === "k" ? Math.min(1, this.boardSweeper[index][dir]): this.boardSweeper[index][dir];
-      for (let i = 1; i <= n; i++) {
+      for (let i = 1; i <= this.boardSweeper[index][dir]; i++) {
         let next = index + i * vector;
         let other = board[next];
 
@@ -167,10 +228,12 @@ export class MoveGenerator {
     return moves;
   }
 
-  static getPseudoLegalMoves(index: number, board: string[], forThreat:boolean = false): Move[] {
+  static getPseudoLegalMoves(index: number, gameState: GameState, forThreat:boolean = false, threatMap: number[] = []): Move[] {
+    const board = gameState.board;
     const piece = board[index];
 
-    if (ChessUtils.isSweeper(piece)) return this.calculateSweeper(piece, index, board);
+    if (piece.toLowerCase() === 'k') return this.calculateKing(piece, index, gameState, threatMap=threatMap);
+    if (ChessUtils.isSweeper(piece)) return this.calculateSweeper(piece, index, gameState);
     else if (ChessUtils.isKnight(piece)) return this.calculateKnight(piece, index, board);
     else return this.claculatePawn(piece, index, board, forThreat = forThreat);
 

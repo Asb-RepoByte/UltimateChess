@@ -1,11 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { SoundService } from './sound-service';
 import { ChessUtils } from '../utils/chess-utils';
-import { MoveGenerator } from '../engine/move-generator';
 import { Move } from '../models/move.model';
+import { MoveGenerator } from '../engine/move-generator';
 import { MoveValidator } from '../engine/move-validator';
-import { ChessPlayer } from '../utils/chess-types';
-import { MoveHistoryEntry } from '../utils/chess-types';
+import { MoveHistoryEntry, GameState, ChessPlayer } from '../utils/chess-types';
 
 
 @Injectable({
@@ -14,13 +13,12 @@ import { MoveHistoryEntry } from '../utils/chess-types';
 export class GameStateService {
   private soundService = inject(SoundService);
   private _board: string[] = [];
-  public san: string = '';
   public threatMap: number[] = [];
   public history: MoveHistoryEntry[] = [];
   turnToPlay: ChessPlayer = 'w';
-
   activeMoves: number[] = [];
   public lastMove: Move | null = null;
+  private castlingRights = 15;
 
   initGame(fen: string) {
     this.loadFEN(fen);
@@ -30,7 +28,7 @@ export class GameStateService {
     return ChessUtils.exportFEN({
       board: [...this.board],
       turn: this.turnToPlay,
-      castling:  "",
+      castling:  ChessUtils.getCastlingString(this.castlingRights),
       enPassant: null
     });
   }
@@ -55,9 +53,9 @@ export class GameStateService {
     const isCapture = !!this._board[target];
     const move = new Move(src, target, piece, isCapture);
 
+    if (!piece) return
     if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
     if (src === target) return; // if the target move is the same as the source return
-
 
     const allLegalMoves = this.getMoves(src);
 
@@ -66,7 +64,6 @@ export class GameStateService {
     const san = ChessUtils.getSAN(move, [...this._board], allLegalMoves);
     this.history.push({ fen: this.exportFEN(), san: san }); // pushing the state to the history before making the move
     this.lastMove = move;
-    this.san = ChessUtils.getSAN(move, [...this._board], allLegalMoves);
 
     // actually making the move
     this._board[target] = piece;
@@ -109,19 +106,29 @@ export class GameStateService {
         if (piece.toLowerCase() !== piece) continue;
       }
 
-      console.log("piece: ", piece);
-      this.threatMap = this.threatMap.concat(MoveGenerator.getPseudoLegalMoves(i, [...this.board], true).map(move => move.target));
+
+      const gameState: GameState = {
+        board: [...this.board],
+        turn: this.turnToPlay,
+        castling: ChessUtils.getCastlingString(this.castlingRights),
+        enPassant: null
+      };
+      this.threatMap = this.threatMap.concat(MoveGenerator.getPseudoLegalMoves(i, gameState, true).map(move => move.target));
 
     }
-
-    console.log("threat: ", this.threatMap);
   }
 
   getMoves(index: number): Move[] {
     let piece = this.board[index];
     if (!piece) return [];
     if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return [];
-    const moves = MoveValidator.getValidMoves(index, [...this._board]);
+    const gameState: GameState = {
+      board: [...this.board],
+      turn: this.turnToPlay,
+      castling: ChessUtils.getCastlingString(this.castlingRights),
+      enPassant: null
+    };
+    const moves = MoveValidator.getValidMoves(index, gameState, this.threatMap);
     this.activeMoves = moves.map(move => move.target);
     return moves;
   }
