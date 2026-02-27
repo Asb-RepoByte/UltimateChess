@@ -7,6 +7,7 @@ export class ChessUtils {
     let board = new Array(64).fill(""); // start with an empty board
     const fenPieces = fen.split(" ")[0];
     const turn: 'w' | 'b' = (fen.split(" ")[1] === 'w') ? 'w' : 'b';
+    const castlingRights = fen.split(" ")[2];
     const rows = fenPieces.split("/");
 
     let currentPos = 0;
@@ -18,12 +19,9 @@ export class ChessUtils {
         } else {
           currentPos += parseInt(char);
         }
-
       }
-
     }
-
-    return { board: board, turn: turn, castling: fen.split(" ")[2], enPassant: null }
+    return { board: board, turn: turn, castling: castlingRights, enPassant: null }
   }
 
   static exportFEN(gameState: GameState): string {

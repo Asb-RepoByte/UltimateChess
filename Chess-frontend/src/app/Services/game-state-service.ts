@@ -38,7 +38,6 @@ export class GameStateService {
     this._board = gameState.board;
     this.turnToPlay = gameState.turn;
     this.castlingRights = ChessUtils.getCastlingBitMap(gameState.castling);
-
   }
 
   public get board(): ReadonlyArray<string> {
@@ -62,7 +61,9 @@ export class GameStateService {
     if (!move) return; // only make the move if it's in the set of legal moves
 
     const san = ChessUtils.getSAN(move, [...this._board], allLegalMoves);
-    this.history.push({ fen: this.exportFEN(), san: san }); // pushing the state to the history before making the move
+    const fen = this.exportFEN();
+    console.log(fen);
+    this.history.push({ fen: fen, san: san }); // pushing the state to the history before making the move
     this.lastMove = move;
 
     if (move.isCastling) {
@@ -82,8 +83,8 @@ export class GameStateService {
     this.handleCastlingRights(piece, move);
 
     // updating everything that needs to be updated
-    this.updateThreatMap();
     this.turnToPlay = this.turnToPlay === 'w' ? 'b' : 'w';
+    this.updateThreatMap()
 
     // making sound
     if (isCapture) {
@@ -166,6 +167,7 @@ export class GameStateService {
     if (this.history.length === 0) return;
 
     const previousState = this.history.pop()!.fen;
+    console.log(previousState);
     this.loadFEN(previousState);
     this.updateThreatMap();
     this.soundService.playMove();
@@ -174,26 +176,20 @@ export class GameStateService {
   redo() {}
 
   updateThreatMap() {
+    const gameState: GameState = {
+      board: [...this.board],
+      turn: this.turnToPlay,
+      castling: ChessUtils.getCastlingString(this.castlingRights),
+      enPassant: null
+    };
     this.threatMap = new Array();
     for (let i = 0; i < this._board.length; i++) {
       let piece = this._board[i];
       if (!piece) continue;
 
-      if (this.turnToPlay === 'w') {
-        if (piece.toUpperCase() !== piece) continue;
-      } else {
-        if (piece.toLowerCase() !== piece) continue;
-      }
-
-
-      const gameState: GameState = {
-        board: [...this.board],
-        turn: this.turnToPlay,
-        castling: ChessUtils.getCastlingString(this.castlingRights),
-        enPassant: null
-      };
+      if (this.turnToPlay === 'w' && ChessUtils.getPlayerType(piece) === 'w') continue;
+      if (this.turnToPlay === 'b' && ChessUtils.getPlayerType(piece) === 'b') continue;
       this.threatMap = this.threatMap.concat(MoveGenerator.getPseudoLegalMoves(i, gameState, true).map(move => move.target));
-
     }
   }
 

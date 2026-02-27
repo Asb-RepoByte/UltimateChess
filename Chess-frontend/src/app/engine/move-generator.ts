@@ -85,6 +85,7 @@ export class MoveGenerator {
     }
 
     if (!threatMap) return moves;
+    console.log("threat: ", threatMap);
     // white queen side
     if (isWhite && (rights & Castling.WhiteQueenside)) {
       // squares must be empty and king must not be in danger
