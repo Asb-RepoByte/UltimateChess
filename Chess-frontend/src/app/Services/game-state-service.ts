@@ -4,7 +4,7 @@ import { ChessUtils } from '../utils/chess-utils';
 import { Move } from '../models/move.model';
 import { MoveGenerator } from '../engine/move-generator';
 import { MoveValidator } from '../engine/move-validator';
-import { MoveHistoryEntry, GameState, ChessPlayer } from '../utils/chess-types';
+import { MoveHistoryEntry, GameState, ChessPlayer, Castling } from '../utils/chess-types';
 
 
 @Injectable({
@@ -37,6 +37,7 @@ export class GameStateService {
     const gameState = ChessUtils.loadFEN(fen);
     this._board = gameState.board;
     this.turnToPlay = gameState.turn;
+    this.castlingRights = ChessUtils.getCastlingBitMap(gameState.castling);
 
   }
 
@@ -51,23 +52,34 @@ export class GameStateService {
   handleMove(src: number, target: number): void {
     const piece = this._board[src];
     const isCapture = !!this._board[target];
-    const move = new Move(src, target, piece, isCapture);
 
     if (!piece) return
     if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return;
     if (src === target) return; // if the target move is the same as the source return
 
     const allLegalMoves = this.getMoves(src);
-
-    if (!this.activeMoves.includes(target)) return; // only make the moves if it's on the set of possible moves
+    const move = allLegalMoves.find(m => m.src === src && m.target === target);
+    if (!move) return; // only make the move if it's in the set of legal moves
 
     const san = ChessUtils.getSAN(move, [...this._board], allLegalMoves);
     this.history.push({ fen: this.exportFEN(), san: san }); // pushing the state to the history before making the move
     this.lastMove = move;
 
-    // actually making the move
-    this._board[target] = piece;
-    this._board[src] = "";
+    if (move.isCastling) {
+      this.handleCastling(move);
+    } else if (move.promotion) {
+      this.handlePromotion();
+    } else if (move.enPassant) {
+      this.handleEnPassant();
+    }
+    else {
+      // actually making the move
+      this._board[target] = piece;
+      this._board[src] = "";
+
+    }
+
+    this.handleCastlingRights(piece, move);
 
     // updating everything that needs to be updated
     this.updateThreatMap();
@@ -79,7 +91,74 @@ export class GameStateService {
     } else {
       this.soundService.playMove();
     }
+  }
 
+  handleCastlingRights(piece: string, move: Move) {
+    if (piece.toLowerCase() === 'k') {
+      if (ChessUtils.getPlayerType(piece) === 'w') {
+        this.castlingRights &= ~Castling.WhiteKingside;
+        this.castlingRights &= ~Castling.WhiteQueenside;
+      } else {
+        this.castlingRights &= ~Castling.BlackQueenside;
+        this.castlingRights &= ~Castling.BlackKingside;
+
+      }
+    }
+
+    if (piece.toLowerCase() === 'r') {
+      if (ChessUtils.getPlayerType(piece) === 'w') {
+        if (move.src === 56)
+          this.castlingRights &= ~Castling.WhiteQueenside;
+        if (move.src === 63)
+          this.castlingRights &= ~Castling.WhiteKingside;
+      } else {
+        if (move.src === 0)
+          this.castlingRights &= ~Castling.BlackQueenside;
+        if (move.src === 7)
+          this.castlingRights &= ~Castling.BlackKingside;
+      }
+    }
+  }
+
+  handleCastling(move: Move) {
+    if (move.src === 60) { // white king
+      if (move.target === 62 && (this.castlingRights & Castling.WhiteKingside)) { // king side
+        this._board[move.target] = 'K';
+        this._board[move.src] = '';
+        this._board[61] = 'R';
+        this._board[63] = '';
+      }
+      if (move.target === 58 && (this.castlingRights & Castling.WhiteQueenside)) { // king side
+        this._board[move.target] = 'K';
+        this._board[move.src] = '';
+        this._board[59] = 'R';
+        this._board[56] = '';
+      }
+
+    }
+    if (move.src === 4) { // black king
+      if (move.target === 6 && (this.castlingRights & Castling.BlackKingside)) { // king side
+        this._board[move.target] = 'k';
+        this._board[move.src] = '';
+        this._board[5] = 'r';
+        this._board[7] = '';
+      }
+      if (move.target === 2 && (this.castlingRights & Castling.BlackQueenside)) { // king side
+        this._board[move.target] = 'k';
+        this._board[move.src] = '';
+        this._board[3] = 'r';
+        this._board[0] = '';
+      }
+
+    }
+
+  }
+
+  handlePromotion() {
+
+  }
+
+  handleEnPassant() {
 
   }
 

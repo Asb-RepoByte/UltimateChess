@@ -23,7 +23,7 @@ export class ChessUtils {
 
     }
 
-    return { board: board, turn: turn, castling: "", enPassant: null }
+    return { board: board, turn: turn, castling: fen.split(" ")[2], enPassant: null }
   }
 
   static exportFEN(gameState: GameState): string {
