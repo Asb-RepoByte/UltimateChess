@@ -8,6 +8,13 @@ export class ChessUtils {
     const fenPieces = fen.split(" ")[0];
     const turn: 'w' | 'b' = (fen.split(" ")[1] === 'w') ? 'w' : 'b';
     const castlingRights = fen.split(" ")[2];
+    const enPassantStr = fen.split(" ")[3];
+
+    let enPassantIndex: number | null = null;
+    if (enPassantStr && enPassantStr !== '-') {
+      enPassantIndex = ChessUtils.algebraicToIndex(enPassantStr);
+    }
+
     const rows = fenPieces.split("/");
 
     let currentPos = 0;
@@ -21,7 +28,7 @@ export class ChessUtils {
         }
       }
     }
-    return { board: board, turn: turn, castling: castlingRights, enPassant: null }
+    return { board: board, turn: turn, castling: castlingRights, enPassant: enPassantIndex }
   }
 
   static exportFEN(gameState: GameState): string {
@@ -43,8 +50,12 @@ export class ChessUtils {
       if (emptyCount > 0) fen += emptyCount;
       if (row < 7) fen += "/";
     }
-    // For a full FEN, you'd append " w KQkq - 0 1" etc. here
-    return fen + " " + gameState.turn + " " + gameState.castling;
+
+    const castlingString = gameState.castling || "-";
+    const enPassantString = gameState.enPassant !== null ? ChessUtils.indexToAlgebraic(gameState.enPassant) : "-";
+
+    // For a full FEN, you'd append halfmove and fullmove here
+    return `${fen} ${gameState.turn} ${castlingString} ${enPassantString}`;
 
   }
 
@@ -74,6 +85,18 @@ export class ChessUtils {
 
   static getColumLabel(column: number) {
     return String.fromCharCode(97 + column);
+  }
+
+  static algebraicToIndex(square: string): number {
+    const file = square.charCodeAt(0) - 97; // 'a' -> 0, 'b' -> 1
+    const rank = 8 - parseInt(square[1]);    // '8' -> 0, '1' -> 7
+    return rank * 8 + file;
+  }
+
+  static indexToAlgebraic(index: number): string {
+    const file = this.getColumLabel(this.getCoord(index).column);
+    const rank = (this.getCoord(index).row + 1).toString();
+    return file + rank;
   }
 
   static isSquareBlack(index: number): boolean {
@@ -115,16 +138,16 @@ export class ChessUtils {
       if (piece.toUpperCase() === piece) {
         // white pawn
         let pawnDirections: { name: Direction, vector: number }[] = [{ name: "north", vector: -8 }];
-        if (board[index - 7]) pawnDirections.push({ name: "northEast", vector: -7 });
-        if (board[index - 9]) pawnDirections.push({ name: "northWest", vector: -9 });
+        pawnDirections.push({ name: "northEast", vector: -7 });
+        pawnDirections.push({ name: "northWest", vector: -9 });
         if (rank === 1) pawnDirections.push({ name: "northNorth", vector: -16 }); // white and first move
         return pawnDirections;
 
       } else {
         // black pawn
         let pawnDirections: { name: Direction, vector: number }[] = [{ name: "west", vector: 8 }];
-        if (board[index + 7]) pawnDirections.push({ name: "southWest", vector: 7 });
-        if (board[index + 9]) pawnDirections.push({ name: "southEast", vector: 9 });
+        pawnDirections.push({ name: "southWest", vector: 7 });
+        pawnDirections.push({ name: "southEast", vector: 9 });
         if (rank === 6) pawnDirections.push({ name: "westWest", vector: 16 }); // black and first move
         return pawnDirections;
 

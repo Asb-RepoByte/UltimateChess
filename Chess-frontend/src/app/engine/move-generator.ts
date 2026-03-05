@@ -1,11 +1,14 @@
 import { Move } from "../models/move.model";
 import { ChessUtils } from "../utils/chess-utils";
 import { Castling, Direction, GameState } from "../utils/chess-types";
+import { LoggerService } from "../Services/logger.service";
+import { inject } from "@angular/core";
 
 
 export class MoveGenerator {
+  private static logger = new LoggerService();
 
-  private static _boardSweeper: Array<Record<Direction, number>> =  [];
+  private static _boardSweeper: Array<Record<Direction, number>> = [];
   static readonly directions: { name: Direction, vector: number }[] = [
     { name: "west", vector: -1 },
     { name: "east", vector: 1 },
@@ -75,6 +78,11 @@ export class MoveGenerator {
         continue;
       }
 
+      // Calculate bounds for king wrapping check
+      const p1 = ChessUtils.getCoord(index);
+      const p2 = ChessUtils.getCoord(next);
+      if (Math.abs(p2.column - p1.column) > 1) continue; // King cannot wrap around the board
+
       if (ChessUtils.isFreind(piece, other)) {
         continue;
       } else {
@@ -85,12 +93,12 @@ export class MoveGenerator {
     }
 
     if (!threatMap) return moves;
-    console.log("threat: ", threatMap);
+    this.logger.debug("threat: ", threatMap);
     // white queen side
     if (isWhite && (rights & Castling.WhiteQueenside)) {
       // squares must be empty and king must not be in danger
       if (!board[59] && !board[58] && !board[57]) {
-        if (!threatMap[60] && !threatMap[59] && !threatMap[58]) {
+        if (!threatMap.includes(60) && !threatMap.includes(59) && !threatMap.includes(58)) {
           moves.push(new Move(index, 58, piece, false, undefined, true));
         }
       }
@@ -100,7 +108,7 @@ export class MoveGenerator {
     if (isWhite && (rights & Castling.WhiteKingside)) {
       // squares must be empty and king must not be in danger
       if (!board[62] && !board[61]) {
-        if (!threatMap[60] && !threatMap[61]) {
+        if (!threatMap.includes(60) && !threatMap.includes(61)) {
           moves.push(new Move(index, 62, piece, false, undefined, true));
         }
       }
@@ -182,11 +190,15 @@ export class MoveGenerator {
       let next = index + vector;
       let other = board[next];
 
-      // stup jumping through the black hole
+      // stop jumping through the black hole (wrapping around columns/rows)
       let p1 = ChessUtils.getCoord(index);
       let p2 = ChessUtils.getCoord(next);
 
-      if ((p2.row - p2.row) ** 2 + (p2.column - p1.column) ** 2 > 5) continue;
+      // Prevent jumping off the board directly
+      if (next < 0 || next > 63) continue;
+
+      // Fix coordinate distance diff logic
+      if ((p2.row - p1.row) ** 2 + (p2.column - p1.column) ** 2 > 5) continue;
 
       // in case the square is empty
       if (!other) {
@@ -207,10 +219,10 @@ export class MoveGenerator {
 
   }
 
-  static claculatePawn(piece: string, index: number, board: string[], forThreat:boolean = false): Move[] {
-
+  static calculatePawn(piece: string, index: number, gameState: GameState, forThreat: boolean = false): Move[] {
+    const board = gameState.board;
     let moves: Array<Move> = new Array();
-    let pieceDirections = ChessUtils.getPieceDirections(piece, index, board, forThreat=forThreat);
+    let pieceDirections = ChessUtils.getPieceDirections(piece, index, board, forThreat = forThreat);
 
     // in case of null
     if (!pieceDirections) return new Array();
@@ -227,16 +239,39 @@ export class MoveGenerator {
       const p1 = ChessUtils.getCoord(index);
       const p2 = ChessUtils.getCoord(next);
       if (((p2.row - p1.row) ** 2 + (p2.column - p1.column) ** 2) > 4) continue;
+      const isPromotion = ChessUtils.getCoord(next).row === 0 || ChessUtils.getCoord(next).row === 7;
+
       // in case the square is empty
       if (!other) {
-        moves.push(new Move(index, next, piece));
+        // En Passant check (diagonal move to empty square that matches enPassant index)
+        if (gameState.enPassant === next && Math.abs(vector) !== 8 && Math.abs(vector) !== 16) {
+          moves.push(new Move(index, next, piece, true, undefined, false, true));
+          continue;
+        }
+        // stop moving diagonaly when no enemy piece is there
+        if (ChessUtils.getCoord(index).column !== ChessUtils.getCoord(next).column) continue;
+
+        if (isPromotion) {
+          const promotions = piece.toUpperCase() === piece ? ['Q', 'R', 'B', 'N'] : ['q', 'r', 'b', 'n'];
+          promotions.forEach(promo => moves.push(new Move(index, next, piece, false, promo)));
+        } else {
+          // normal forward move
+          moves.push(new Move(index, next, piece));
+        }
+
         continue;
       }
 
       // square not empty
       if (ChessUtils.isFreind(piece, other)) continue; // if friend no
       if (ChessUtils.getCoord(index).column !== ChessUtils.getCoord(next).column) {
-        moves.push(new Move(index, next, piece))
+        // Standard Capture
+        if (isPromotion) {
+          const promotions = piece.toUpperCase() === piece ? ['Q', 'R', 'B', 'N'] : ['q', 'r', 'b', 'n'];
+          promotions.forEach(promo => moves.push(new Move(index, next, piece, true, promo)));
+        } else {
+          moves.push(new Move(index, next, piece, true));
+        }
         continue;
       }
 
@@ -245,14 +280,14 @@ export class MoveGenerator {
     return moves;
   }
 
-  static getPseudoLegalMoves(index: number, gameState: GameState, forThreat:boolean = false, threatMap: number[] = []): Move[] {
+  static getPseudoLegalMoves(index: number, gameState: GameState, forThreat: boolean = false, threatMap: number[] = []): Move[] {
     const board = gameState.board;
     const piece = board[index];
 
-    if (piece.toLowerCase() === 'k') return this.calculateKing(piece, index, gameState, threatMap=threatMap);
+    if (piece.toLowerCase() === 'k') return this.calculateKing(piece, index, gameState, threatMap = threatMap);
     if (ChessUtils.isSweeper(piece)) return this.calculateSweeper(piece, index, gameState);
     else if (ChessUtils.isKnight(piece)) return this.calculateKnight(piece, index, board);
-    else return this.claculatePawn(piece, index, board, forThreat = forThreat);
+    else return this.calculatePawn(piece, index, gameState, forThreat = forThreat);
 
   }
 

@@ -1,48 +1,44 @@
 <div class="game-layout">
   <div class="board-container" cdkDropListGroup>
     @for (piece of this.game.board; track $index) {
-    <div class="square"
-        [class.black]="Utils.isSquareBlack($index)"
-        [class.under-threat]="game.threatMap.includes($index)"
-        [class.last-move-src]="game.lastMove?.src === $index"
-        [class.last-move-target]="game.lastMove?.target === $index"
-        cdkDropList
-        [cdkDropListData]="$index"
-        [cdkDropListSortingDisabled]="true"
-        (cdkDropListDropped)="onDrop($event)">
+    <div class="square" [class.black]="Utils.isSquareBlack($index)"
+      [class.under-threat]="debugService.showThreatMap() && game.threatMap.includes($index)"
+      [class.last-move-src]="game.lastMove?.src === $index" [class.last-move-target]="game.lastMove?.target === $index"
+      [class.en-passant-target]="debugService.showEnPassantTarget() && $index === game.enPassantTarget"
+      cdkDropList [cdkDropListData]="$index" [cdkDropListSortingDisabled]="true" (cdkDropListDropped)="onDrop($event)">
 
       @if (game.activeMoves.includes($index)) {
-        @if (game.board[$index]) {
-          <div class="capture-dot"></div>
+        @if (game.board[$index] || game.enPassantTarget === $index) {
+        <div class="capture-dot"></div>
 
         } @else {
-          <div class="move-dot"></div>
+        <div class="move-dot"></div>
         }
       }
 
+      @if (debugService.showSquareIndices()) {
+      <div class="debug-index">{{ $index }}</div>
+      }
+
       @if (piece) {
-        <div class="piece-container"
-             cdkDrag [cdkDragData]="piece"
-             (mousedown)="onDragStart($index)"
-             (mouseup)="onUnSelect($index)"
-             (cdkDragStarted)="onDragStart($index)"
-             >
-          <chess-piece [fen]="piece" />
-          <div *cdkDragPlaceholder class="placeholder"></div>
-        </div>
+      <div class="piece-container" cdkDrag [cdkDragData]="piece" (mousedown)="onDragStart($index, true)"
+        (mouseup)="onUnSelect($index)" (cdkDragStarted)="onDragStart($index)">
+        <chess-piece [fen]="piece" />
+        <div *cdkDragPlaceholder class="placeholder"></div>
+      </div>
       }
 
 
       @if (Utils.getCoord($index).column === 0) {
-        <span class="label rank">
-          {{ Utils.getCoord($index).row + 1 }}
-        </span>
+      <span class="label rank">
+        {{ Utils.getCoord($index).row + 1 }}
+      </span>
       }
 
       @if (Utils.getCoord($index).row === 0) {
-        <span class="label file">
-          {{ Utils.getColumLabel(Utils.getCoord($index).column) }}
-        </span>
+      <span class="label file">
+        {{ Utils.getColumLabel(Utils.getCoord($index).column) }}
+      </span>
       }
 
     </div>
@@ -56,30 +52,32 @@
 
     <div class="move-list-container">
       @for (move of game.history; track $index) {
-        @if ($index % 2 === 0) {
-          <div class="move-row">
-            <div class="move-number">{{ ($index / 2) + 1 }}.</div>
-            <div class="white-move move-item">{{ move.san }}</div>
+      @if ($index % 2 === 0) {
+      <div class="move-row">
+        <div class="move-number">{{ ($index / 2) + 1 }}.</div>
+        <div class="white-move move-item">{{ move.san }}</div>
 
-            @if (game.history[$index + 1]) {
-              <div class="black-move move-item">
-                 {{ game.history[$index + 1].san }}
-              </div>
-            } @else {
-              <div class="black-move move-item empty"></div>
-            }
-          </div>
+        @if (game.history[$index + 1]) {
+        <div class="black-move move-item">
+          {{ game.history[$index + 1].san }}
+        </div>
+        } @else {
+        <div class="black-move move-item empty"></div>
         }
+      </div>
+      }
       }
     </div>
 
     <div class="action-footer">
       <div class="main-actions">
-        <button class="action-btn" (click)="game.undo()" [disabled]="game.history.length === 0"><span class="icon">↩</span></button>
-        <button class="action-btn" (click)="game.undo()" [disabled]="game.history.length === 0"><span class="icon">↩</span></button>
+        <button class="action-btn" (click)="game.undo()" [disabled]="game.history.length === 0"><span
+            class="icon">↩</span></button>
+        <button class="action-btn" (click)="game.undo()" [disabled]="game.history.length === 0"><span
+            class="icon">↩</span></button>
       </div>
     </div>
   </div>
 
 
-<div>
+  <div>
