@@ -5,12 +5,14 @@ import { Move } from '../models/move.model';
 import { MoveGenerator } from '../engine/move-generator';
 import { MoveValidator } from '../engine/move-validator';
 import { MoveHistoryEntry, GameState, ChessPlayer, Castling } from '../utils/chess-types';
+import { LoggerService } from './logger.service';
 
 
 @Injectable({
   providedIn: 'root',
 })
 export class GameStateService {
+  private logger = inject(LoggerService);
   private soundService = inject(SoundService);
   private _board: string[] = [];
   public threatMap: number[] = [];
@@ -19,6 +21,7 @@ export class GameStateService {
   activeMoves: number[] = [];
   public lastMove: Move | null = null;
   private castlingRights = 15;
+  public enPassantTarget: number | null = null;
 
   initGame(fen: string) {
     this.loadFEN(fen);
@@ -28,8 +31,8 @@ export class GameStateService {
     return ChessUtils.exportFEN({
       board: [...this.board],
       turn: this.turnToPlay,
-      castling:  ChessUtils.getCastlingString(this.castlingRights),
-      enPassant: null
+      castling: ChessUtils.getCastlingString(this.castlingRights),
+      enPassant: this.enPassantTarget
     });
   }
 
@@ -38,6 +41,7 @@ export class GameStateService {
     this._board = gameState.board;
     this.turnToPlay = gameState.turn;
     this.castlingRights = ChessUtils.getCastlingBitMap(gameState.castling);
+    this.enPassantTarget = gameState.enPassant;
   }
 
   public get board(): ReadonlyArray<string> {
@@ -62,16 +66,16 @@ export class GameStateService {
 
     const san = ChessUtils.getSAN(move, [...this._board], allLegalMoves);
     const fen = this.exportFEN();
-    console.log(fen);
+    this.logger.debug(fen);
     this.history.push({ fen: fen, san: san }); // pushing the state to the history before making the move
     this.lastMove = move;
 
     if (move.isCastling) {
       this.handleCastling(move);
     } else if (move.promotion) {
-      this.handlePromotion();
+      this.handlePromotion(move);
     } else if (move.enPassant) {
-      this.handleEnPassant();
+      this.handleEnPassant(move);
     }
     else {
       // actually making the move
@@ -80,6 +84,7 @@ export class GameStateService {
 
     }
 
+    this.handleEnPassantTarget(piece, src, target);
     this.handleCastlingRights(piece, move);
 
     // updating everything that needs to be updated
@@ -92,6 +97,18 @@ export class GameStateService {
     } else {
       this.soundService.playMove();
     }
+  }
+
+  handleEnPassantTarget(piece: string, src: number, target: number) {
+
+    // Set or reset En Passant target
+    if (piece.toLowerCase() === 'p' && Math.abs(src - target) === 16) {
+      // Pawn moved two squares, set the target square behind it
+      this.enPassantTarget = src + (target - src) / 2;
+    } else {
+      this.enPassantTarget = null;
+    }
+    this.logger.debug("enPassant Target: " + this.enPassantTarget);
   }
 
   handleCastlingRights(piece: string, move: Move) {
@@ -155,32 +172,41 @@ export class GameStateService {
 
   }
 
-  handlePromotion() {
-
+  handlePromotion(move: Move) {
+    // Default to Queen until UI is implemented to choose piece
+    const promotionPiece = move.promotion || (this.turnToPlay === 'w' ? 'Q' : 'q');
+    this._board[move.target] = promotionPiece;
+    this._board[move.src] = "";
   }
 
-  handleEnPassant() {
+  handleEnPassant(move: Move) {
+    this._board[move.target] = move.piece;
+    this._board[move.src] = "";
 
+    // Calculate the index of the captured pawn (which is 'behind' the target square)
+    const direction = this.turnToPlay === 'w' ? 8 : -8;
+    const capturedPawnIndex = move.target + direction;
+    this._board[capturedPawnIndex] = "";
   }
 
   undo() {
     if (this.history.length === 0) return;
 
     const previousState = this.history.pop()!.fen;
-    console.log(previousState);
+    this.logger.debug(previousState);
     this.loadFEN(previousState);
     this.updateThreatMap();
     this.soundService.playMove();
   }
 
-  redo() {}
+  redo() { }
 
   updateThreatMap() {
     const gameState: GameState = {
       board: [...this.board],
       turn: this.turnToPlay,
       castling: ChessUtils.getCastlingString(this.castlingRights),
-      enPassant: null
+      enPassant: this.enPassantTarget
     };
     this.threatMap = new Array();
     for (let i = 0; i < this._board.length; i++) {
@@ -193,7 +219,7 @@ export class GameStateService {
     }
   }
 
-  getMoves(index: number): Move[] {
+  getMoves(index: number, main: boolean = false): Move[] {
     let piece = this.board[index];
     if (!piece) return [];
     if (this.turnToPlay !== ChessUtils.getPlayerType(piece)) return [];
@@ -201,10 +227,17 @@ export class GameStateService {
       board: [...this.board],
       turn: this.turnToPlay,
       castling: ChessUtils.getCastlingString(this.castlingRights),
-      enPassant: null
+      enPassant: this.enPassantTarget
     };
     const moves = MoveValidator.getValidMoves(index, gameState, this.threatMap);
     this.activeMoves = moves.map(move => move.target);
+
+    if (main) {
+      this.logger.debug("Directions", ChessUtils.getPieceDirections(piece, index, [...this._board], false));
+      this.logger.debug("pseudoMoves: ", MoveGenerator.getPseudoLegalMoves(index, gameState, false, this.threatMap));
+      this.logger.debug("legalMoves: ", moves);
+
+    }
     return moves;
   }
 

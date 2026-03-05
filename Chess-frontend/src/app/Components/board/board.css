@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: repeat(8, 81px);
   grid-template-rows: repeat(8, 81px);
-  border:  2px solid #333;
+  border: 2px solid #333;
   width: fit-content;
 }
 
@@ -85,6 +85,18 @@
   position: absolute;
 }
 
+.debug-index {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 5;
+}
+
 .move-dot {
   position: absolute;
   width: 20px;
@@ -108,8 +120,10 @@
 .move-dot {
   width: 25%;
   height: 25%;
-  background-color: rgba(0, 0, 0, 0.15); /* Neutral dark for visibility */
-  background-color: rgba(129, 182, 76, 0.6); /* Greenish tint */
+  background-color: rgba(0, 0, 0, 0.15);
+  /* Neutral dark for visibility */
+  background-color: rgba(129, 182, 76, 0.6);
+  /* Greenish tint */
   border-radius: 50%;
   z-index: 1;
   pointer-events: none;
@@ -120,7 +134,8 @@
   position: absolute;
   width: 90%;
   height: 90%;
-  border: 6px solid rgba(231, 76, 60, 0.4); /* Soft Red */
+  border: 6px solid rgba(231, 76, 60, 0.4);
+  /* Soft Red */
   border-radius: 50%;
   z-index: 1;
   pointer-events: none;
@@ -134,7 +149,8 @@
 
 .square.under-threat {
   background-color: rgba(231, 76, 60, 1.0);
-  border: 3px solid rgba(122, 76, 60, 1.0); /* Soft Red */
+  border: 3px solid rgba(122, 76, 60, 1.0);
+  /* Soft Red */
 }
 
 .game-layout {
@@ -245,4 +261,9 @@
   color: #999;
   font-weight: bold;
   cursor: pointer;
+}
+
+.square.en-passant-target {
+  background-color: #f80;
+  z-index: 1000;
 }

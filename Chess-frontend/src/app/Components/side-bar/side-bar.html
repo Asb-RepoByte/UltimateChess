@@ -1,3 +1,36 @@
 <div class="sidebar">
+  @if (!isProduction) {
+  <div class="debug-panel">
+    <h3>Developer Debug Tools</h3>
 
+    <div class="control-group">
+      <label for="logLevel">Log Level:</label>
+      <select id="logLevel" (change)="onLogLevelChange($event)" [value]="logger.currentLevel()">
+        <option [value]="LogLevel.DEBUG">Debug</option>
+        <option [value]="LogLevel.INFO">Info</option>
+        <option [value]="LogLevel.WARN">Warn</option>
+        <option [value]="LogLevel.ERROR">Error</option>
+        <option [value]="LogLevel.NONE">None</option>
+      </select>
+    </div>
+
+    <div class="control-group toggle">
+      <label for="showIndices">Show Square Indices:</label>
+      <input type="checkbox" id="showIndices" [checked]="debugService.showSquareIndices()"
+        (change)="debugService.toggleSquareIndices()">
+    </div>
+
+    <div class="control-group toggle">
+      <label for="showThreats">Show Threat Map:</label>
+      <input type="checkbox" id="showThreats" [checked]="debugService.showThreatMap()"
+        (change)="debugService.toggleThreatMap()">
+    </div>
+
+    <div class="control-group toggle">
+      <label for="showEnPassentTarget">Show enPassant Target</label>
+      <input type="checkbox" id="showEnPassentTarget" [checked]="debugService.showEnPassantTarget()"
+        (change)="debugService.toggleEnPassantTarget()">
+    </div>
+  </div>
+  }
 </div>
