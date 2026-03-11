@@ -5,6 +5,7 @@ import { ChessUtils } from '../../utils/chess-utils';
 import { GameStateService } from '../../Services/game-state-service';
 import { DebugService } from '../../Services/debug.service';
 
+
 @Component({
   selector: 'chess-board',
   imports: [Piece, DragDropModule,],
